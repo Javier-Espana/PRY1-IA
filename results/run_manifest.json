@@ -1,0 +1,13 @@
+{
+  "seed": 42,
+  "dataset_path": "data\\raw\\cyberbullying_tweets.csv",
+  "n_samples": 47692,
+  "n_classes": 6,
+  "models_evaluated": [
+    "Naive Bayes",
+    "Logistic Regression (tuned)",
+    "Gradient Boosting (tuned)"
+  ],
+  "best_model": "Logistic Regression (tuned)",
+  "elapsed_seconds": 613.54
+}

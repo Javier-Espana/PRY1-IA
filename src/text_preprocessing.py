@@ -20,6 +20,12 @@ except LookupError:
     nltk.download('punkt')
 
 try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    # Required by newer NLTK versions for sentence tokenization resources.
+    nltk.download('punkt_tab')
+
+try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
     nltk.download('stopwords')
@@ -95,7 +101,8 @@ class TextPreprocessor:
     
     def tokenize(self, text: str) -> List[str]:
         """Split text into tokens."""
-        return word_tokenize(text)
+        # preserve_line avoids sentence tokenization dependency on punkt resources.
+        return word_tokenize(text, preserve_line=True)
     
     def clean_text(self, text: str) -> str:
         """Apply all cleaning steps."""

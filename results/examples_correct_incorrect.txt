@@ -1,0 +1,13 @@
+Examples correctly classified:
+- idiotdeath time anyone die tomorrow idiot hatred muslim northerner crystal clear rejoice deathno wonder u r always descending life day stupid
+- futhermore islam based theft mohammed raised army giving 45 everything stole
+- stating must condemn christian belief support radical overthrow constitutional republic democrat changed gave returned extreme root
+- judge turn heat competition think store remaining team
+- fair activity happened commit bit
+
+Examples misclassified:
+- rt anti stop treating block trophy soon feminist stop treating block argument | pred=4 true=2
+- rt idgaf shorty wear cause nigga look buh cant finna stop ha looking bad asl | pred=3 true=1
+- could benign hilarity situation lost | pred=4 true=3
+- rigged block last time tweet even watch | pred=4 true=3
+- photoset he sensitive people bully feel lonely hasnt got anybody talk | pred=4 true=3

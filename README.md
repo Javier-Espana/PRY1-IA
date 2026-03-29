@@ -103,39 +103,8 @@ Luego:
 
 ### Opción 2: Ejecutar como Script Python
 
-Crear un archivo `run_project.py` en la raíz del proyecto:
-
-```python
-import sys
-sys.path.insert(0, 'src')
-
-from text_preprocessing import preprocess_data
-from vectorization import vectorize_texts
-from models import create_models, train_and_evaluate_models
-from utils import load_data, prepare_data, plot_confusion_matrix
-import pandas as pd
-
-# Cargar datos
-df = load_data('cyberbullying_tweets.csv')
-
-# Preprocesar
-from text_preprocessing import TextPreprocessor
-preprocessor = TextPreprocessor()
-df['tweet_text_cleaned'] = df['tweet_text'].apply(preprocessor.process_text)
-
-# Preparar datos
-X_train, X_test, y_train, y_test = prepare_data(df, 'tweet_text_cleaned')
-
-# Vectorizar
-X_train_tfidf, X_test_tfidf, vectorizer = vectorize_texts(X_train, X_test, 'tfidf')
-
-# Crear y entrenar modelos
-models = create_models()
-results = train_and_evaluate_models(models, X_train_tfidf, y_train, X_test_tfidf, y_test)
-
-# Mostrar resultados
-print(results)
-```
+El proyecto incluye `run_project.py` en la raíz. Este script ejecuta el pipeline completo,
+realiza tuning de hiperparámetros para 2 modelos, compara train vs test y genera artefactos en `results/`.
 
 Ejecutar:
 
@@ -229,12 +198,15 @@ Neural Network              0.8390    0.8392      0.8390    0.8391
 ### Archivos Generados
 
 1. **model_comparison.png** - Gráfica comparativa de modelos
-2. **train_vs_test.png** - Análisis de overfitting
-3. **confusion_matrix_*.png** - Matrices de confusión
+2. **train_vs_test_gap.png** - Brecha train-test para análisis de overfitting
+3. **confusion_matrix_best.png** - Matriz de confusión del mejor modelo
 4. **model_metrics.csv** - Métricas en formato tabla
 5. **train_vs_test_comparison.csv** - Análisis train vs test
-6. **classification_report.txt** - Reporte detallado
-7. **project_summary.txt** - Resumen completo del proyecto
+6. **hyperparameter_tuning.csv** - Mejor combinación de hiperparámetros por modelo tuneado
+7. **classification_report_best.txt** - Reporte detallado del mejor modelo
+8. **examples_correct_incorrect.txt** - Ejemplos bien y mal clasificados
+9. **user_test_predictions.txt** - Pruebas de usuario con tweets de entrada
+10. **run_manifest.json** - Evidencia de reproducibilidad (seed, dataset, tiempos)
 
 ## Función de Predicción
 
