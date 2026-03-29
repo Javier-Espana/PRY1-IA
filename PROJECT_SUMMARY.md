@@ -171,3 +171,63 @@ python run_project.py
 - No se usaron modelos preentrenados.
 - La ejecucion es reproducible con semilla 42.
 - Este archivo refleja el estado real del repositorio al 29 de marzo de 2026.
+
+---
+
+## HANDOFF
+
+### Objetivo inmediato
+
+Completar el cierre academico final con reporte PDF y justificacion tecnica del modelo elegido.
+
+### Siguientes tareas prioritarias
+
+1. Generar el reporte PDF final (sin codigo) usando la evidencia ya creada en `results/`.
+2. Incluir una justificacion del mejor modelo balanceando desempeno y costo computacional.
+3. Mejorar clases mas debiles (`not_cyberbullying` y `other_cyberbullying`) con una segunda corrida experimental.
+4. Dejar una tabla comparativa final entre corrida actual y corrida mejorada.
+
+### Criterio de terminado por tarea
+
+1. Reporte PDF:
+  - Incluye EDA, pipeline, particion train/test, modelos, tuning, metricas, matriz de confusion y pruebas de usuario.
+  - No contiene codigo fuente.
+2. Justificacion tecnica:
+  - Explica por que el modelo final es superior.
+  - Incluye metricas y costo (tiempo de entrenamiento e inferencia).
+3. Mejora de clases debiles:
+  - Presenta nuevas metricas por clase.
+  - Muestra si subio F1 de `not_cyberbullying` y `other_cyberbullying`.
+4. Cierre de entrega:
+  - ZIP/RAR con codigo y recursos.
+  - PDF por separado, listo para subir.
+
+### Comandos de trabajo rapido
+
+1. Instalar dependencias:
+  - `pip install -r requirements.txt`
+2. Ejecutar pipeline base:
+  - `python run_project.py`
+3. Revisar artefactos:
+  - Carpeta `results/`
+
+### Tiempos esperados
+
+- Ejecucion de `run_project.py`: ~8 a 12 minutos en equipo promedio.
+- Redaccion y armado de PDF final: 1 a 2 horas.
+- Iteracion de mejora de clases debiles: 1 a 3 horas (segun cantidad de pruebas).
+
+### Riesgos conocidos
+
+1. Rendimiento desigual por clase: las clases `not_cyberbullying` y `other_cyberbullying` son las mas dificiles.
+2. Sobreajuste moderado: gap train-test alrededor de ~0.054 a ~0.058.
+3. Posibles errores NLTK en entorno nuevo: si falta recurso, descargar `punkt_tab`.
+
+### Archivos clave para continuar
+
+1. Script de ejecucion: `run_project.py`
+2. Resumen de estado: `PROJECT_SUMMARY.md`
+3. Metricas globales: `results/model_metrics.csv`
+4. Metricas train-test: `results/train_vs_test_comparison.csv`
+5. Tuning: `results/hyperparameter_tuning.csv`
+6. Reporte por clase: `results/classification_report_best.txt`
