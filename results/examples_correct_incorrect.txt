@@ -6,8 +6,8 @@ Examples correctly classified:
 - fair activity happened commit bit
 
 Examples misclassified:
-- rt anti stop treating block trophy soon feminist stop treating block argument | pred=4 true=2
-- rt idgaf shorty wear cause nigga look buh cant finna stop ha looking bad asl | pred=3 true=1
-- could benign hilarity situation lost | pred=4 true=3
-- rigged block last time tweet even watch | pred=4 true=3
-- photoset he sensitive people bully feel lonely hasnt got anybody talk | pred=4 true=3
+- rt anti stop treating block trophy soon feminist stop treating block argument | pred=other_cyberbullying true=gender
+- rt idgaf shorty wear cause nigga look buh cant finna stop ha looking bad asl | pred=not_cyberbullying true=ethnicity
+- could benign hilarity situation lost | pred=other_cyberbullying true=not_cyberbullying
+- rigged block last time tweet even watch | pred=other_cyberbullying true=not_cyberbullying
+- photoset he sensitive people bully feel lonely hasnt got anybody talk | pred=other_cyberbullying true=not_cyberbullying

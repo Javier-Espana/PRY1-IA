@@ -9,5 +9,5 @@
     "Gradient Boosting (tuned)"
   ],
   "best_model": "Logistic Regression (tuned)",
-  "elapsed_seconds": 613.54
+  "elapsed_seconds": 442.15
 }
