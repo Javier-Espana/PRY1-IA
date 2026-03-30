@@ -182,6 +182,7 @@ def save_best_model_artifacts(
     y_test: np.ndarray,
     y_pred_best: np.ndarray,
     label_names: List[str],
+    inv_label_map: Dict[int, str],
     X_test_text: pd.Series,
 ) -> None:
     cm = confusion_matrix(y_test, y_pred_best)
@@ -209,7 +210,9 @@ def save_best_model_artifacts(
 
         f.write("\nExamples misclassified:\n")
         for idx in fail_idx:
-            f.write(f"- {X_test_text.iloc[idx][:160]} | pred={y_pred_best[idx]} true={y_test[idx]}\n")
+            pred_label = inv_label_map[int(y_pred_best[idx])]
+            true_label = inv_label_map[int(y_test[idx])]
+            f.write(f"- {X_test_text.iloc[idx][:160]} | pred={pred_label} true={true_label}\n")
 
 
 def save_user_test_predictions(preprocessor: TextPreprocessor, vectorizer, model, inv_label_map: Dict[int, str]) -> None:
@@ -291,6 +294,7 @@ def main() -> None:
         y_test=y_test,
         y_pred_best=y_pred_best,
         label_names=[inv_label_map[i] for i in range(len(inv_label_map))],
+        inv_label_map=inv_label_map,
         X_test_text=X_test_text.reset_index(drop=True),
     )
 

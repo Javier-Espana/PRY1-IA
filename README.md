@@ -26,7 +26,9 @@ Este proyecto implementa un sistema de clasificación de textos que identifica y
 
 ```
 PRY1-IA/
-├── cyberbullying_tweets.csv          # Dataset principal
+├── data/
+│   └── raw/
+│       └── cyberbullying_tweets.csv  # Dataset principal
 ├── src/                              # Módulos Python
 │   ├── __init__.py
 │   ├── text_preprocessing.py         # Limpieza y preparación de texto
@@ -35,15 +37,18 @@ PRY1-IA/
 │   └── utils.py                      # Funciones de utilidad
 ├── notebooks/
 │   └── cyberbullying_detection.ipynb # Notebook principal interactivo
-├── data/                             # (Para datos procesados)
-├── models/                           # (Para modelos guardados)
 ├── results/                          # Resultados y visualizaciones
 │   ├── model_comparison.png
-│   ├── train_vs_test.png
-│   ├── confusion_matrix_*.png
+│   ├── train_vs_test_gap.png
+│   ├── confusion_matrix_best.png
 │   ├── model_metrics.csv
-│   ├── classification_report.txt
-│   └── project_summary.txt
+│   ├── classification_report_best.txt
+│   ├── examples_correct_incorrect.txt
+│   ├── hyperparameter_tuning.csv
+│   ├── train_vs_test_comparison.csv
+│   ├── user_test_predictions.txt
+│   └── run_manifest.json
+├── run_project.py                    # Pipeline reproducible principal
 └── README.md                         # Este archivo
 ```
 
@@ -156,9 +161,9 @@ Se implementan 2 métodos:
 - Stratified split para mantener distribución de clases
 - Asegura balance en ambos conjuntos
 
-### 5. Comparación de 5 Modelos
+### 5. Modelos Implementados y Corrida Reproducible
 
-Se entrenan y comparan los siguientes modelos:
+Modelos implementados en el proyecto:
 
 | Modelo | Algoritmo | Características |
 |--------|-----------|-----------------|
@@ -169,6 +174,14 @@ Se entrenan y comparan los siguientes modelos:
 | **Neural Network** | MLPClassifier | Deep learning, 3 capas ocultas (256-128-64) |
 
 **Script**: `src/models.py`
+
+Modelos evaluados en la corrida reproducible (`run_project.py`):
+
+| Modelo | Tipo |
+|--------|------|
+| **Naive Bayes** | Probabilístico |
+| **Logistic Regression (tuned)** | Lineal + tuning con GridSearchCV |
+| **Gradient Boosting (tuned)** | Ensamble + tuning con GridSearchCV |
 
 ### 6. Evaluación y Métricas
 
@@ -210,23 +223,20 @@ Neural Network              0.8390    0.8392      0.8390    0.8391
 
 ## Función de Predicción
 
-El notebook incluye una función `predict_cyberbullying()` para clasificar tweets nuevos:
+El notebook incluye una función `predict_tweet()` para clasificar tweets nuevos:
 
 ```python
 # Usar el modelo entrenado para predecir
-result = predict_cyberbullying("Your tweet here")
+label, cleaned = predict_tweet("Your tweet here")
 
-print(f"Tweet: {result['tweet']}")
-print(f"Predicción: {result['prediction']}")
-print(f"Confianza: {result['confidence']:.4f}")
+print(f"Cleaned: {cleaned}")
+print(f"Predicción: {label}")
 ```
 
 ### Salida Esperada
 ```
-Tweet: You're so stupid, nobody likes you
-Predicción: Other Cyberbullying
-Confianza: 0.8912
-Modelo: Gradient Boosting
+Cleaned: stupid nobody like
+Predicción: other_cyberbullying
 ```
 
 ## Celdas del Notebook Jupyter
@@ -239,11 +249,12 @@ El notebook principal contiene las siguientes secciones:
 4. **Text Normalization and Tokenization** - Normalización
 5. **Text Vectorization** - BoW y TF-IDF
 6. **Train-Test Split** - División de datos
-7. **Model 1-5 Training** - Entrenamiento individual
-8. **Model Comparison** - Comparación de resultados
-9. **Confusion Matrix Analysis** - Análisis de errores
-10. **User Testing Function** - Predicciones interactivas
-11. **Summary and Conclusions** - Resumen final
+7. **Model Training** - Entrenamiento de 3 modelos
+8. **Hyperparameter Tuning (CV=3)** - Ajuste para Logistic Regression y Gradient Boosting
+9. **Model Comparison** - Comparación de resultados
+10. **Confusion Matrix Analysis** - Análisis de errores
+11. **User Testing Function** - Predicciones interactivas
+12. **Summary and Conclusions** - Resumen final
 
 ## Análisis de Resultados
 
@@ -277,7 +288,7 @@ Muestra donde el modelo confunde categorías:
 
 ### 3. Model Selection
 - Hyperparameter tuning
-- Cross-validation (implícito en split)
+- Cross-validation explícita con GridSearchCV (cv=3)
 - Comparación sistemática
 
 ### 4. Model Evaluation

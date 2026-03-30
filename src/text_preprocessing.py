@@ -57,7 +57,7 @@ class TextPreprocessor:
         return re.sub(r'@\w+', '', text)
     
     def remove_hashtags(self, text: str) -> str:
-        """Remove hashtags but keep the content."""
+        """Remove hashtags from text."""
         return re.sub(r'#\w+', '', text)
     
     def remove_emojis(self, text: str) -> str:
