@@ -1,0 +1,11 @@
+true_label,predicted_label,count,error_rate_within_true_label
+not_cyberbullying,other_cyberbullying,535,0.3366897419760856
+other_cyberbullying,not_cyberbullying,499,0.31884984025559104
+gender,other_cyberbullying,129,0.08087774294670846
+gender,not_cyberbullying,107,0.0670846394984326
+other_cyberbullying,gender,88,0.05623003194888179
+not_cyberbullying,gender,86,0.054122089364380115
+not_cyberbullying,religion,53,0.03335431088735054
+not_cyberbullying,age,46,0.0289490245437382
+religion,not_cyberbullying,38,0.02375
+religion,other_cyberbullying,25,0.015625

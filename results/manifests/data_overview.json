@@ -1,0 +1,45 @@
+{
+  "n_rows_raw": 47692,
+  "n_rows_after_dropna": 47692,
+  "rows_dropped_due_to_missing_required_columns": 0,
+  "missing_tweet_text_raw": 0,
+  "missing_cyberbullying_type_raw": 0,
+  "class_distribution_after_cleaning": [
+    {
+      "class": "age",
+      "count": 7992,
+      "percentage": 0.167575,
+      "count_minmax": 0.965714
+    },
+    {
+      "class": "ethnicity",
+      "count": 7961,
+      "percentage": 0.166925,
+      "count_minmax": 0.788571
+    },
+    {
+      "class": "gender",
+      "count": 7973,
+      "percentage": 0.167177,
+      "count_minmax": 0.857143
+    },
+    {
+      "class": "not_cyberbullying",
+      "count": 7945,
+      "percentage": 0.16659,
+      "count_minmax": 0.697143
+    },
+    {
+      "class": "other_cyberbullying",
+      "count": 7823,
+      "percentage": 0.164032,
+      "count_minmax": 0.0
+    },
+    {
+      "class": "religion",
+      "count": 7998,
+      "percentage": 0.167701,
+      "count_minmax": 1.0
+    }
+  ]
+}

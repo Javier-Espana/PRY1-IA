@@ -1,0 +1,4 @@
+model,best_score_cv_f1_weighted,best_params,train_subset_size
+Naive Bayes,0.7542577270424752,"{""alpha"": 0.005}",
+Linear SVM,0.8109341664305686,"{""C"": 0.5, ""class_weight"": ""balanced""}",
+Random Forest (fixed),,"{""n_estimators"": 120, ""max_depth"": 20, ""min_samples_split"": 2}",12000.0

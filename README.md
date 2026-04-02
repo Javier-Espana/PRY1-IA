@@ -109,7 +109,10 @@ Luego:
 ### Opción 2: Ejecutar como Script Python
 
 El proyecto incluye `run_project.py` en la raíz. Este script ejecuta el pipeline completo,
-realiza tuning de hiperparámetros para 2 modelos, compara train vs test y genera artefactos en `results/`.
+realiza tuning de hiperparámetros con validación cruzada para modelos clásicos estables,
+compara train vs test y genera artefactos en `results/`.
+La corrida reproducible actual usa vectorización TF-IDF híbrida (palabras + n-gramas de caracteres)
+y una rama dirigida de keywords con peso configurable.
 
 Ejecutar:
 
@@ -140,7 +143,7 @@ python run_project.py
 **Script**: `src/text_preprocessing.py`
 
 ### 3. Vectorización de Texto
-Se implementan 2 métodos:
+Se implementan 3 métodos:
 
 **Bag of Words (BoW)**:
 - CountVectorizer
@@ -152,7 +155,17 @@ Se implementan 2 métodos:
 - Considera frecuencia de término e inversa del documento
 - Mejor para clasificación de texto
 - N-gramas: unigramas y bigramas
-- Max features: 5,000
+- Max features base de la corrida reproducible: 2,000
+
+**TF-IDF Híbrido (corrida reproducible actual)**:
+- Combina TF-IDF de palabras con TF-IDF de caracteres (`char_wb`)
+- Captura mejor variaciones ortográficas y patrones subléxicos comunes en acoso
+- Se mantiene dentro de modelos estadísticos tradicionales (sin preentrenados)
+
+**TF-IDF Híbrido + Keywords Dirigidas (corrida reproducible actual)**:
+- Agrega una rama de patrones léxicos explícitos (ej. `go back your country`, `not want you`)
+- Asigna mayor peso relativo a señales dirigidas para mejorar casos ambiguos
+- Mantiene el enfoque clásico sin modelos preentrenados
 
 **Script**: `src/vectorization.py`
 
@@ -179,9 +192,9 @@ Modelos evaluados en la corrida reproducible (`run_project.py`):
 
 | Modelo | Tipo |
 |--------|------|
-| **Naive Bayes** | Probabilístico |
-| **Logistic Regression (tuned)** | Lineal + tuning con GridSearchCV |
-| **Gradient Boosting (tuned)** | Ensamble + tuning con GridSearchCV |
+| **Naive Bayes (tuned)** | Probabilístico + tuning manual con CV |
+| **Linear SVM (tuned)** | Lineal + tuning manual con CV |
+| **Random Forest** | Ensamble (entrenado en subset estratificado por costo) |
 
 ### 6. Evaluación y Métricas
 
@@ -191,21 +204,21 @@ Se usan las siguientes métricas:
 - **Precision**: De todas las predicciones positivas, cuántas son correctas
 - **Recall**: De todos los positivos reales, cuántos detectó
 - **F1-Score**: Media armónica de Precision y Recall
+- **Weak-Class F1 Avg**: Promedio de F1 para `not_cyberbullying` y `other_cyberbullying`
+- **Balance Score**: Criterio final de selección del mejor modelo en corrida reproducible: 0.5 * F1 ponderado + 0.5 * Weak-Class F1 Avg
 - **Confusion Matrix**: Matriz de confusión por clase
 - **Classification Report**: Reporte detallado por categoría
 
 **Script**: `src/models.py`
 
-## Resultados Esperados
+## Resultados de la Corrida Reproducible
 
-### Model Performance (Ejemplo)
+### Métricas (test)
 ```
-Model                      accuracy  precision    recall       f1
-Naive Bayes                 0.7851    0.7852      0.7851    0.7851
-Logistic Regression         0.8234    0.8237      0.8234    0.8235
-Support Vector Machine      0.8412    0.8415      0.8412    0.8413
-Gradient Boosting           0.8523    0.8525      0.8523    0.8524
-Neural Network              0.8390    0.8392      0.8390    0.8391
+Model                  accuracy  precision  recall    f1      weak_f1_avg  balance_score
+Linear SVM (tuned)     0.8182    0.8187     0.8182  0.8182    0.5693       0.6938
+Random Forest          0.7981    0.8189     0.7981  0.8024    0.5379       0.6702
+Naive Bayes (tuned)    0.7606    0.7563     0.7606  0.7557    0.5083       0.6320
 ```
 
 ### Archivos Generados
@@ -250,7 +263,7 @@ El notebook principal contiene las siguientes secciones:
 5. **Text Vectorization** - BoW y TF-IDF
 6. **Train-Test Split** - División de datos
 7. **Model Training** - Entrenamiento de 3 modelos
-8. **Hyperparameter Tuning (CV=3)** - Ajuste para Logistic Regression y Gradient Boosting
+8. **Hyperparameter Tuning (CV=2)** - Ajuste manual para Naive Bayes y Linear SVM
 9. **Model Comparison** - Comparación de resultados
 10. **Confusion Matrix Analysis** - Análisis de errores
 11. **User Testing Function** - Predicciones interactivas
@@ -267,7 +280,7 @@ El notebook principal contiene las siguientes secciones:
 
 ### Overfitting
 
-Se analiza la diferencia train-test. Si es > 0.05, hay overfitting.
+Se analiza la diferencia train-test por métrica (accuracy, precision, recall, F1, macro F1 y balance score).
 
 ### Confusion Matrix
 
@@ -288,7 +301,7 @@ Muestra donde el modelo confunde categorías:
 
 ### 3. Model Selection
 - Hyperparameter tuning
-- Cross-validation explícita con GridSearchCV (cv=3)
+- Cross-validation explícita manual (cv=2) para modelos lineales/probabilísticos
 - Comparación sistemática
 
 ### 4. Model Evaluation

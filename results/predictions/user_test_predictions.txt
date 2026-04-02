@@ -1,16 +1,22 @@
 Tweet: I hope you have a great day!
-Cleaned: hope great day
+Cleaned: hope you great day
 Prediction: not_cyberbullying
 --------------------------------------------------------------------------------
 Tweet: You are stupid and nobody wants you
-Cleaned: stupid nobody want
+Cleaned: you stupid nobody want you
 Prediction: other_cyberbullying
+Model prediction before rule: not_cyberbullying
+Rule override applied: yes
 --------------------------------------------------------------------------------
 Tweet: Go back to your country, we do not want you here
-Cleaned: go back country want
-Prediction: not_cyberbullying
+Cleaned: go back your country not want you
+Prediction: other_cyberbullying
+Model prediction before rule: not_cyberbullying
+Rule override applied: yes
 --------------------------------------------------------------------------------
 Tweet: I disagree with your opinion but respect your right to express it
-Cleaned: disagree opinion respect right express
+Cleaned: disagree your opinion respect your right express
 Prediction: not_cyberbullying
+Model prediction before rule: other_cyberbullying
+Rule override applied: yes
 --------------------------------------------------------------------------------

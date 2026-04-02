@@ -1,0 +1,54 @@
+{
+  "seed": 42,
+  "dataset_path": "data\\raw\\cyberbullying_tweets.csv",
+  "vectorizer_type": "tfidf_hybrid_keywords",
+  "max_features": 2000,
+  "keyword_feature_branch": true,
+  "keyword_phrases": [
+    "go back",
+    "go back your country",
+    "go back your country not want you",
+    "your country",
+    "your country not want you",
+    "country",
+    "not want you",
+    "not welcome here",
+    "nobody want you",
+    "leave country",
+    "do not belong",
+    "you do not belong",
+    "you should leave",
+    "send you back",
+    "foreign",
+    "immigrant",
+    "not welcome",
+    "we do not want you"
+  ],
+  "keyword_feature_weight": 3.0,
+  "ensemble_train_subset_size": 12000,
+  "cv_folds": 2,
+  "n_samples": 47692,
+  "n_classes": 6,
+  "models_evaluated": [
+    "Naive Bayes (tuned)",
+    "Linear SVM (tuned)",
+    "Random Forest"
+  ],
+  "vectorizers_compared": [
+    "tfidf_hybrid",
+    "tfidf_hybrid_keywords",
+    "tfidf",
+    "bow"
+  ],
+  "vectorizer_comparison_sort": "balance_score desc, f1 desc",
+  "best_model": "Linear SVM (tuned)",
+  "best_model_criterion": "balance_score = 0.5 * weighted_f1 + 0.5 * average_f1(not_cyberbullying, other_cyberbullying)",
+  "report_support_artifacts": [
+    "manifests/data_overview.json",
+    "tables/data_class_distribution.csv",
+    "figures/data_class_distribution.png",
+    "tables/vectorizer_comparison.csv",
+    "tables/common_confusions_best.csv"
+  ],
+  "elapsed_seconds": 40.15
+}

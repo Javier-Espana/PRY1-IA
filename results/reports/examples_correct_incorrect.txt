@@ -1,0 +1,13 @@
+Examples correctly classified:
+- you idiotdeath no time anyone you die tomorrow you idiot hatred muslim northerner crystal clear you rejoice deathno wonder u r always descending life day stupid
+- futhermore islam based theft mohammed raised army giving 45 everything stole
+- stating must condemn christian belief support radical overthrow constitutional republic no democrat not changed gave returned extreme root
+- judge turn heat competition you think store remaining team
+- fair activity happened commit bit
+
+Examples misclassified:
+- vomit | pred=other_cyberbullying true=not_cyberbullying
+- fact paid 7 fruit cup coffee school insane | pred=age true=not_cyberbullying
+- could benign hilarity situation not lost | pred=other_cyberbullying true=not_cyberbullying
+- rigged block last time tweet even watch | pred=other_cyberbullying true=not_cyberbullying
+- saying youre going put old yeller style triggering old yeller feeling | pred=other_cyberbullying true=gender

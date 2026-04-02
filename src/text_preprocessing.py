@@ -45,7 +45,8 @@ class TextPreprocessor:
     """Text preprocessing for cyberbullying tweets."""
     
     def __init__(self):
-        self.stop_words = set(stopwords.words('english'))
+        keep_terms = {'no', 'nor', 'not', 'never', 'you', 'your', 'yours', 'yourself', 'yourselves'}
+        self.stop_words = set(stopwords.words('english')) - keep_terms
         self.lemmatizer = WordNetLemmatizer()
     
     def remove_urls(self, text: str) -> str:
