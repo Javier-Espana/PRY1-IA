@@ -41,3 +41,5 @@ python run_project.py
 ## Nota
 
 La última corrida selecciona como mejor modelo a **Linear SVM (tuned)** y guarda toda la evidencia en `results/`.
+
+Repositorio: https://github.com/Javier-Espana/PRY1-IA.git
