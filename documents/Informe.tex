@@ -1,0 +1,563 @@
+﻿\documentclass[12pt,a4paper]{article}
+
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{amsmath}
+
+\geometry{margin=2.5cm}
+\onehalfspacing
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=black}
+
+\title{\textbf{Primer Proyecto de Inteligencia Artificial 2026}\\
+Detección de Ciberacoso en Redes Sociales\\[0.3cm]
+\large Opción B --- Clasificación de Tweets}
+\author{Ángel Esteban Esquit Hernández -- 23221\\
+Javier Eduardo España Pacheco -- 23361\\
+Roberto José Barreda Siekavizza -- 23354}
+\date{Abril 2026}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+%% ====================================================================
+\section{Resumen Ejecutivo}
+%% ====================================================================
+
+Este informe presenta el desarrollo de un sistema de clasificación supervisada
+para detectar ciberacoso en tweets. El problema se formula como clasificación
+multiclase sobre seis categorías: \textit{age}, \textit{ethnicity},
+\textit{gender}, \textit{religion}, \textit{other\_cyberbullying} y
+\textit{not\_cyberbullying}. El flujo completo incluye preprocesamiento NLP,
+vectorización de texto (BoW, TF-IDF, TF-IDF híbrido y TF-IDF híbrido con
+keywords dirigidas), entrenamiento y comparación de tres modelos (Naive Bayes,
+Linear SVM y Random Forest), optimización de hiperparámetros mediante
+validación cruzada estratificada, análisis de overfitting y pruebas de
+usuario con una función interactiva de predicción.
+
+El mejor modelo obtenido es \textbf{Linear SVM (tuned)} con un accuracy de
+81.82\% y un F1 ponderado de 0.8182 en el conjunto de prueba.
+
+%% ====================================================================
+\section{Presentación y Análisis de Datos}
+%% ====================================================================
+
+\subsection{Fuente y estructura del dataset}
+Se utilizó el dataset \textit{Cyberbullying Classification} disponible en
+Kaggle\footnote{\url{https://www.kaggle.com/datasets/andrewmvd/cyberbullying-classification}},
+almacenado localmente en \texttt{data/raw/cyberbullying\_tweets.csv}.
+El archivo contiene 47,692 muestras con dos columnas:
+\texttt{tweet\_text} (texto del tweet) y \texttt{cyberbullying\_type}
+(etiqueta de clasificación).
+
+\subsection{Análisis exploratorio y distribución de clases}
+Se verificó la distribución de las seis clases, encontrando un balance
+prácticamente uniforme. La clase más numerosa es \textit{religion} con 7,998
+muestras y la menor es \textit{other\_cyberbullying} con 7,823; la diferencia
+es de apenas 175 muestras (0.37\%), lo que permite enfocarse en el
+procesamiento del texto sin necesidad de técnicas de re-muestreo.
+
+\begin{table}[H]
+\centering
+\caption{Distribución de clases en el dataset (47,692 muestras totales)}
+\begin{tabular}{lrr}
+\toprule
+Clase & Cantidad & Porcentaje \\
+\midrule
+age                  & 7,992 & 16.76\% \\
+ethnicity            & 7,961 & 16.69\% \\
+gender               & 7,973 & 16.72\% \\
+not\_cyberbullying   & 7,945 & 16.66\% \\
+other\_cyberbullying & 7,823 & 16.40\% \\
+religion             & 7,998 & 16.77\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{data_class_distribution.png}
+    \caption{Distribución de clases normalizada (min-max) tras limpieza.}
+\end{figure}
+
+\subsection{Datos faltantes y atípicos}
+Se realizó una inspección de calidad de datos. No se encontraron valores
+faltantes en ninguna de las dos columnas (\texttt{tweet\_text} ni
+\texttt{cyberbullying\_type}), por lo que las 47,692 filas se mantuvieron
+íntegras. El preprocesamiento de texto (Sección~\ref{sec:preprocessing}) se
+encarga de manejar datos atípicos a nivel textual, como tweets que contienen
+únicamente URLs o menciones y quedan vacíos tras la limpieza.
+
+%% ====================================================================
+\section{Preprocesamiento de Texto (NLP Pipeline)}
+\label{sec:preprocessing}
+%% ====================================================================
+
+El pipeline de preprocesamiento está implementado en
+\texttt{src/text\_preprocessing.py} mediante la clase
+\texttt{TextPreprocessor}. Las etapas se aplican secuencialmente:
+
+\subsection{Limpieza del texto}
+\begin{itemize}
+  \item \textbf{Eliminación de URLs:} se remueven direcciones web
+        (http, https, www) mediante expresiones regulares.
+  \item \textbf{Eliminación de menciones} (\texttt{@usuario}):
+        se eliminan por no correlacionarse con el tipo de ciberacoso.
+  \item \textbf{Eliminación de hashtags} (\texttt{\#}):
+        se eliminan por completo; su formato concatenado dificulta
+        la tokenización.
+  \item \textbf{Eliminación de emojis y caracteres especiales:}
+        se aplican patrones Unicode para emojis y luego se remueven
+        todos los caracteres no alfanuméricos.
+\end{itemize}
+
+\subsection{Normalización}
+Todo el texto se convierte a minúsculas y se colapsan espacios múltiples
+en un solo espacio.
+
+\subsection{Tokenización}
+Se utiliza \texttt{word\_tokenize} de NLTK con la opción
+\texttt{preserve\_line=True} para dividir cada tweet limpio en tokens.
+
+\subsection{Eliminación de stopwords}
+Se eliminan las stopwords del inglés (corpus de NLTK), con la excepción
+importante de conservar palabras de negación y pronombres personales:
+\texttt{no}, \texttt{nor}, \texttt{not}, \texttt{never}, \texttt{you},
+\texttt{your}, \texttt{yours}, \texttt{yourself}, \texttt{yourselves}.
+Esta decisión es fundamental porque frases como ``\textit{no one wants you}''
+o ``\textit{you are not welcome}'' perderían su significado de acoso si se
+eliminaran estas palabras.
+
+\subsection{Lematización}
+Se aplica el lematizador WordNet de NLTK para reducir cada token a su forma
+base (lema). Por ejemplo, ``running'' $\to$ ``run'' e
+``insulted'' $\to$ ``insult''.
+
+\subsection{Ejemplo de transformación completa}
+\begin{quote}
+\textbf{Original:} \textit{``Go back to your country, we do not want you
+here!!! @user123 \#hate''}\\
+\textbf{Limpio:} \textit{``go back your country not want you''}
+\end{quote}
+
+%% ====================================================================
+\section{Vectorización: De Texto a Números}
+\label{sec:vectorization}
+%% ====================================================================
+
+Los modelos de aprendizaje automático requieren representaciones numéricas.
+Se implementaron cuatro esquemas de vectorización en
+\texttt{src/vectorization.py} y se compararon objetivamente con el mismo
+clasificador de referencia (LinearSVC, $C=0.5$, \texttt{class\_weight=balanced}).
+
+\subsection{Bag of Words (BoW)}
+Representa cada documento como un vector de conteos de frecuencia de
+unigramas y bigramas (\texttt{ngram\_range=(1,2)}), limitado a 2,000
+características (\texttt{max\_features=2000}), con filtros
+\texttt{min\_df=2} y \texttt{max\_df=0.95}.
+
+\subsection{TF-IDF}
+\textit{Term Frequency -- Inverse Document Frequency} pondera cada término
+por su frecuencia local y su rareza global. Se emplea
+\texttt{sublinear\_tf=True} para escala logarítmica ($1 + \log(\text{tf})$).
+Mismos parámetros de filtrado que BoW.
+
+\subsection{TF-IDF Híbrido (Palabras + Caracteres)}
+Combina dos vectorizadores TF-IDF concatenados horizontalmente
+(\texttt{hstack}): n-gramas de palabras (1,2) y n-gramas de caracteres a
+nivel de palabra (\texttt{char\_wb}, rango 3--5, hasta 1,000 features).
+Los n-gramas de caracteres capturan patrones sub-léxicos como sufijos
+despectivos, variaciones ortográficas y jerga abreviada.
+
+\subsection{TF-IDF Híbrido + Keywords Dirigidas}
+Extiende el esquema híbrido con una tercera capa de características binarias
+basadas en un vocabulario fijo de 17 frases de rechazo y xenofobia
+(e.g.\ ``go back your country'', ``not welcome here'', ``nobody want you'').
+Estas características se multiplican por un peso configurable
+(\texttt{keyword\_feature\_weight=3.0}), amplificando la señal de patrones
+indicadores de clases difíciles como \textit{other\_cyberbullying}.
+
+\subsection{Comparación de vectorizadores}
+
+\begin{table}[H]
+\centering
+\caption{Comparación de esquemas de vectorización (mismo clasificador LinearSVC)}
+\label{tab:vec_comp}
+\begin{tabular}{lccccc}
+\toprule
+Vectorizador & Accuracy & F1 & Macro F1 & Weak F1 & Tiempo (s) \\
+\midrule
+tfidf\_hybrid          & 0.8184 & 0.8185 & 0.8175 & 0.5703 & 5.85 \\
+tfidf\_hybrid\_keywords & 0.8182 & 0.8182 & 0.8173 & 0.5693 & 6.85 \\
+tfidf                  & 0.8108 & 0.8114 & 0.8105 & 0.5630 & 1.44 \\
+bow                    & 0.8069 & 0.8087 & 0.8077 & 0.5577 & 1.78 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Los esquemas híbridos superan consistentemente a TF-IDF simple y BoW.
+Se seleccionó \texttt{tfidf\_hybrid\_keywords} como vectorizador de
+producción por su mayor robustez en escenarios de inferencia de usuario,
+donde las keywords dirigidas mejoran la clasificación de tweets con
+patrones explícitos de rechazo.
+
+%% ====================================================================
+\section{Partición de Datos y Metodología}
+%% ====================================================================
+
+\subsection{Partición train/test}
+Se utilizó \texttt{train\_test\_split} de scikit-learn con partición
+80/20 estratificada (\texttt{stratify=y}, \texttt{random\_state=42}):
+\begin{itemize}
+  \item \textbf{Entrenamiento:} 38,153 muestras (80\%).
+  \item \textbf{Prueba:} 9,539 muestras (20\%).
+\end{itemize}
+
+\subsection{Validación cruzada para tuning}
+Durante la búsqueda de hiperparámetros de Naive Bayes y Linear SVM se
+empleó \texttt{StratifiedKFold} con $k=2$ folds sobre el conjunto de
+entrenamiento. Se optó por 2 folds para reducir el costo computacional,
+dado que cada fold contiene aproximadamente 19,000 muestras.
+
+\subsection{Subconjunto estratificado para Random Forest}
+Para controlar el costo computacional del modelo de ensamble, Random Forest
+se entrenó sobre un subconjunto estratificado de 12,000 muestras del
+conjunto de entrenamiento, reduciendo el tiempo de entrenamiento en
+aproximadamente un 68\%.
+
+%% ====================================================================
+\section{Modelos Probados y Configuración Técnica}
+%% ====================================================================
+
+Se evaluaron tres arquitecturas, cada una representando una familia
+distinta de algoritmos.
+
+\subsection{Naive Bayes Multinomial (Modelo Probabilístico)}
+Clasificador probabilístico basado en el Teorema de Bayes con suposición
+de independencia condicional entre características. Eficiente para
+clasificación de texto al operar directamente sobre pesos TF-IDF.
+
+\textbf{Hiperparámetros ajustados:}
+\begin{itemize}
+  \item \texttt{alpha} (suavizado de Laplace): se probaron
+        $\{0.005, 0.01, 0.05\}$. Mejor: \texttt{alpha=0.005}.
+  \item Mejor F1 en validación cruzada: 0.7543.
+\end{itemize}
+
+\subsection{Linear SVM --- Support Vector Machine (Modelo Lineal)}
+\texttt{LinearSVC} implementa una SVM lineal optimizada para alta
+dimensionalidad. Busca el hiperplano que maximiza el margen de
+separación entre clases.
+
+\textbf{Hiperparámetros ajustados:}
+\begin{itemize}
+  \item \texttt{C} (regularización): se probaron $\{0.5, 1.0\}$.
+        Mejor: $C=0.5$.
+  \item \texttt{class\_weight}: se comparó \texttt{None} vs.\
+        \texttt{balanced}. Mejor: \texttt{balanced}.
+  \item \texttt{max\_iter}: 5,000 (garantizar convergencia).
+  \item Mejor F1 en validación cruzada: 0.8109.
+\end{itemize}
+
+\subsection{Random Forest (Modelo de Ensamble)}
+Construye 120 árboles de decisión sobre submuestras aleatorias
+(bagging). Cada árbol se entrena con un subconjunto aleatorio de
+características por nodo.
+
+\textbf{Hiperparámetros fijos} (sin tuning por costo computacional):
+\begin{itemize}
+  \item \texttt{n\_estimators}: 120.
+  \item \texttt{max\_depth}: 20.
+  \item \texttt{min\_samples\_split}: 2.
+  \item Subconjunto de entrenamiento: 12,000 muestras estratificadas.
+\end{itemize}
+
+\subsection{Resumen de hiperparámetros}
+
+\begin{table}[H]
+\centering
+\caption{Hiperparámetros seleccionados y método de tuning}
+\label{tab:hyperparams}
+\begin{tabular}{p{3.0cm} p{5.5cm} c p{2.5cm}}
+\toprule
+Modelo & Hiperparámetros & F1-CV & Método \\
+\midrule
+Naive Bayes   & \texttt{alpha = 0.005}                     & 0.7543 & Grid + CV-2 \\
+Linear SVM    & \texttt{C=0.5, class\_weight=balanced}      & 0.8109 & Grid + CV-2 \\
+Random Forest & \texttt{n\_est=120, depth=20, split=2}      & N/A    & Fijo \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% ====================================================================
+\section{Resultados y Comparación de Modelos}
+%% ====================================================================
+
+\subsection{Métricas en conjunto de prueba}
+
+\begin{table}[H]
+\centering
+\caption{Comparación de modelos en test}
+\label{tab:model_comp}
+\begin{tabular}{lcccccc}
+\toprule
+Modelo & Accuracy & Precision & Recall & F1 & Weak F1 & Balance \\
+\midrule
+Linear SVM (tuned)    & 0.8182 & 0.8187 & 0.8182 & 0.8182 & 0.5693 & 0.6938 \\
+Random Forest         & 0.7981 & 0.8189 & 0.7981 & 0.8024 & 0.5379 & 0.6702 \\
+Naive Bayes (tuned)   & 0.7606 & 0.7563 & 0.7606 & 0.7557 & 0.5083 & 0.6320 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La métrica \textit{balance\_score} combina el rendimiento global con
+el de las clases más difíciles:
+\[
+  \text{balance\_score} = 0.5 \times F1_{\text{ponderado}}
+  + 0.5 \times \overline{F1}(\text{not\_cb},\; \text{other\_cb})
+\]
+
+\subsection{Métricas por clase del mejor modelo}
+
+\begin{table}[H]
+\centering
+\caption{Reporte por clase: Linear SVM (tuned)}
+\label{tab:class_report}
+\begin{tabular}{lcccc}
+\toprule
+Clase & Precision & Recall & F1-Score & Support \\
+\midrule
+age                  & 0.9645 & 0.9850 & 0.9746 & 1,598 \\
+ethnicity            & 0.9731 & 0.9786 & 0.9759 & 1,592 \\
+gender               & 0.8775 & 0.8395 & 0.8581 & 1,595 \\
+not\_cyberbullying   & 0.5598 & 0.5362 & 0.5477 & 1,589 \\
+other\_cyberbullying & 0.5738 & 0.6089 & 0.5908 & 1,565 \\
+religion             & 0.9574 & 0.9556 & 0.9565 & 1,600 \\
+\midrule
+\textbf{Accuracy}    &        &        & \textbf{0.8182} & 9,539 \\
+\textbf{Macro avg}   & 0.8177 & 0.8173 & 0.8173 & 9,539 \\
+\textbf{Weighted avg}& 0.8187 & 0.8182 & 0.8182 & 9,539 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Análisis train vs.\ test (overfitting)}
+
+\begin{table}[H]
+\centering
+\caption{Comparación Train vs.\ Test por modelo (métricas principales)}
+\label{tab:overfitting}
+\begin{tabular}{llccc}
+\toprule
+Modelo & Métrica & Train & Test & Gap \\
+\midrule
+Linear SVM (tuned) & Accuracy      & 0.8729 & 0.8182 & 0.0547 \\
+Linear SVM (tuned) & F1            & 0.8731 & 0.8182 & 0.0549 \\
+Linear SVM (tuned) & Balance score & 0.7838 & 0.6938 & 0.0901 \\
+\midrule
+Naive Bayes (tuned) & Accuracy     & 0.7824 & 0.7606 & 0.0219 \\
+Naive Bayes (tuned) & F1           & 0.7785 & 0.7557 & 0.0228 \\
+Naive Bayes (tuned) & Balance score& 0.6730 & 0.6320 & 0.0409 \\
+\midrule
+Random Forest       & Accuracy     & 0.8275 & 0.7981 & 0.0294 \\
+Random Forest       & F1           & 0.8321 & 0.8024 & 0.0297 \\
+Random Forest       & Balance score& 0.7227 & 0.6702 & 0.0525 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Naive Bayes} presenta el menor gap (F1 gap = 0.023), indicando
+que su simplicidad previene el sobreajuste pero también limita su
+rendimiento absoluto (\textit{underfitting}).
+\textbf{Random Forest} muestra un gap intermedio (F1 gap = 0.030), y
+podría beneficiarse de más datos de entrenamiento.
+\textbf{Linear SVM} tiene el mayor gap (F1 gap = 0.055), pero sigue
+siendo aceptable ya que se encuentra por debajo del umbral típico de
+preocupación (0.10), y sus métricas absolutas en test son las más altas.
+
+\subsection{Figuras de soporte}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{model_comparison.png}
+    \caption{Comparación de métricas por modelo en el conjunto de prueba.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{train_vs_test_gap.png}
+    \caption{Brecha train-test por métrica y modelo.}
+\end{figure}
+
+%% ====================================================================
+\section{Matriz de Confusión y Análisis de Errores}
+%% ====================================================================
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth]{confusion_matrix_best.png}
+    \caption{Matriz de confusión del Linear SVM (tuned) en el conjunto de prueba.}
+\end{figure}
+
+Las cuatro categorías de ciberacoso específico (\textit{age, ethnicity,
+gender, religion}) se clasifican con alta precisión (recall $> 83\%$),
+mientras que \textit{not\_cyberbullying} y \textit{other\_cyberbullying}
+concentran la mayoría de los errores.
+
+\subsection{Confusiones más comunes}
+
+\begin{table}[H]
+\centering
+\caption{Top 5 confusiones más frecuentes del mejor modelo}
+\label{tab:confusions}
+\begin{tabular}{llcr}
+\toprule
+Clase real & Predicha como & Casos & Tasa de error \\
+\midrule
+not\_cyberbullying   & other\_cyberbullying & 535 & 33.67\% \\
+other\_cyberbullying & not\_cyberbullying   & 499 & 31.88\% \\
+gender               & other\_cyberbullying & 129 &  8.09\% \\
+gender               & not\_cyberbullying   & 107 &  6.71\% \\
+other\_cyberbullying & gender               &  88 &  5.62\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La confusión bidireccional entre \textit{not\_cyberbullying} y
+\textit{other\_cyberbullying} (535 + 499 = 1,034 errores) es el desafío
+principal, causada por la ambigüedad semántica inherente: el acoso genérico
+suele ser implícito, sarcástico o sutil y comparte características léxicas
+con tweets inofensivos.
+
+\subsection{Ejemplos correctamente clasificados}
+\begin{itemize}
+  \item \textit{``you idiot death no time anyone you die tomorrow you idiot
+        hatred muslim northerner\ldots''}
+        $\to$ \textbf{religion} (odio explícito hacia musulmanes).
+  \item \textit{``judge turn heat competition you think store remaining
+        team''} $\to$ \textbf{not\_cyberbullying} (lenguaje neutral).
+\end{itemize}
+
+\subsection{Ejemplos incorrectamente clasificados}
+\begin{itemize}
+  \item \textit{``vomit''} --- Real: not\_cyberbullying.
+        Predicho: other\_cyberbullying.\\
+        Análisis: tweet de una sola palabra con connotación negativa;
+        el modelo interpreta el término visceral como hostilidad.
+  \item \textit{``fact paid 7 fruit cup coffee school insane''} ---
+        Real: not\_cyberbullying. Predicho: age.\\
+        Análisis: la mención de ``school'' activa patrones de acoso
+        por edad; el modelo no distingue una queja cotidiana.
+  \item \textit{``saying youre going put old yeller style triggering
+        old yeller feeling''} --- Real: gender.
+        Predicho: other\_cyberbullying.\\
+        Análisis: contenido de género implícito; el modelo no capta la
+        referencia cultural.
+\end{itemize}
+
+%% ====================================================================
+\section{Justificación del Modelo Seleccionado}
+%% ====================================================================
+
+Se selecciona \textbf{Linear SVM (tuned)} como modelo final, basado en
+el criterio compuesto \textit{balance\_score} que combina el rendimiento
+global con el rendimiento en las clases más difíciles.
+
+\subsection{Superioridad cuantitativa}
+Linear SVM supera a los demás en todas las métricas principales
+(Tabla~\ref{tab:model_comp}): accuracy 81.82\% ($>$ RF 79.81\%
+$>$ NB 76.06\%), F1 ponderado 0.8182 ($>$ 0.8024 $>$ 0.7557) y
+balance\_score 0.6938 ($>$ 0.6702 $>$ 0.6320).
+
+\subsection{Ventajas adicionales}
+\begin{itemize}
+  \item \textbf{Eficiencia computacional:} LinearSVC es extremadamente
+        rápido. El pipeline completo se ejecutó en 40.15 segundos
+        (semilla 42, 1 núcleo).
+  \item \textbf{Escalabilidad:} opera eficientemente en el espacio
+        disperso de alta dimensionalidad generado por TF-IDF, sin
+        requerir reducción de dimensionalidad.
+  \item \textbf{Regularización:} $C=0.5$ con \texttt{class\_weight=balanced}
+        proporciona un buen equilibrio entre sesgo y varianza.
+  \item \textbf{Interpretabilidad:} modelo lineal que facilita la
+        explicabilidad, relevante en aplicaciones de moderación de
+        contenido.
+\end{itemize}
+
+\subsection{Análisis de las clases difíciles}
+Las categorías \textit{not\_cyberbullying} y \textit{other\_cyberbullying}
+son las más difíciles para todos los modelos. La rama de keywords dirigidas
+en la vectorización y la capa de reglas post-modelo en la función de
+usuario abordan parcialmente este desafío para escenarios de inferencia.
+
+%% ====================================================================
+\section{Pruebas de Usuario}
+%% ====================================================================
+
+El sistema incluye una función \texttt{predict\_tweet} en
+\texttt{run\_project.py} que recibe un texto libre, aplica preprocesamiento,
+vectoriza y retorna la predicción. Adicionalmente, se implementa una
+capa transparente de reglas post-modelo para mejorar la clasificación
+en escenarios de inferencia directa, sin afectar las métricas del
+benchmark.
+
+\begin{table}[H]
+\centering
+\caption{Resultados de la función de prueba de usuario}
+\label{tab:user_tests}
+\begin{tabular}{p{5.8cm} p{3.5cm} p{2.8cm} c}
+\toprule
+Tweet de entrada & Texto limpio & Predicción & Regla \\
+\midrule
+I hope you have a great day!
+  & hope you great day
+  & not\_cyberbullying & No \\
+\addlinespace
+You are stupid and nobody wants you
+  & you stupid nobody want you
+  & other\_cyberbullying & Sí \\
+\addlinespace
+Go back to your country, we do not want you here
+  & go back your country not want you
+  & other\_cyberbullying & Sí \\
+\addlinespace
+I disagree with your opinion but respect your right to express it
+  & disagree your opinion respect your right express
+  & not\_cyberbullying & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La capa de reglas opera bajo tres condiciones:
+(1)~\textbf{patrones seguros} (e.g.\ ``respect your right'') fuerzan
+\textit{not\_cyberbullying};
+(2)~\textbf{patrones de alerta} (e.g.\ ``go back your country'') activan
+\textit{other\_cyberbullying};
+(3)~\textbf{rechazo directo + insulto} (e.g.\ ``not want you'' + ``stupid'')
+activan \textit{other\_cyberbullying}.
+Cuando una regla anula la predicción del modelo, se indica explícitamente
+en la salida.
+
+%% ====================================================================
+\section{Conclusiones}
+%% ====================================================================
+
+Linear SVM (tuned) fue seleccionado como mejor modelo con 81.82\% de
+accuracy y F1 de 0.8182, superando a Random Forest y Naive Bayes en
+métricas globales y en las clases ambiguas; el principal desafío es la
+confusión bidireccional entre \textit{not\_cyberbullying} y
+\textit{other\_cyberbullying}, que concentra la mayoría de errores.
+
+\end{document}
